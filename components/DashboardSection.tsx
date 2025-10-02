@@ -41,7 +41,7 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
     const today = new Date().toISOString().split('T')[0];
     const todaysOrdersCount = useMemo(() => dailyOrders.filter(order => order.dateSent === today).length, [dailyOrders, today]);
 
-    const getUser = (userId: number) => users.find(u => u.id === userId);
+    const getUser = (userId: string) => users.find(u => u.id === userId);
 
     const recentActivity = useMemo((): ActivityItem[] => {
         const activities: ActivityItem[] = [];

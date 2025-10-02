@@ -66,7 +66,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
             </div>
             <div>
               <label htmlFor="edit-managedBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Managed By</label>
-              <select id="edit-managedBy" value={managedBy} onChange={e => setManagedBy(parseInt(e.target.value, 10))} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <select id="edit-managedBy" value={managedBy} onChange={e => setManagedBy(e.target.value)} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
               </select>
             </div>

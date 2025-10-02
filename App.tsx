@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus } from './types';
+import { db } from './firebaseConfig';
 import Header from './components/Header';
 import DashboardSection from './components/DashboardSection';
 import InventorySection from './components/InventorySection';
@@ -10,46 +11,24 @@ import DailyOrdersSection from './components/DailyOrdersSection';
 import Avatar from './components/Avatar';
 import { PlusIcon, ArchiveBoxIcon, ListBulletIcon, InformationCircleIcon, XMarkIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon, HomeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon } from './components/icons';
 
-const initialUsers: User[] = [
-  { id: 1, name: 'Mohammad', description: 'Owner', password: 'password123', hasSetPassword: false },
-  { id: 2, name: 'Osama', description: ' Manager', password: 'password123', hasSetPassword: false },
-  { id: 3, name: 'Shadi', description: 'Sales Manager', password: 'password123', hasSetPassword: false },
-  { id: 4, name: 'Anas', description: 'Tecnical Servis', password: 'password123', hasSetPassword: false },
-  { id: 5, name: 'Abdulselam', description: 'Accountent', password: 'password123', hasSetPassword: false },
-  { id: 6, name: 'Abdulkarim', description: 'Sales Lead', password: 'password123', hasSetPassword: false },
-  { id: 7, name: 'King Abdullah', description: 'Computer Enginner', password: 'password123', hasSetPassword: false },
+const initialUsers: Omit<User, 'id'>[] = [
+  { name: 'Mohammad', description: 'Owner', password: 'password123', hasSetPassword: false },
+  { name: 'Osama', description: ' Manager', password: 'password123', hasSetPassword: false },
+  { name: 'Shadi', description: 'Sales Manager', password: 'password123', hasSetPassword: false },
+  { name: 'Anas', description: 'Tecnical Servis', password: 'password123', hasSetPassword: false },
+  { name: 'Abdulselam', description: 'Accountent', password: 'password123', hasSetPassword: false },
+  { name: 'Abdulkarim', description: 'Sales Lead', password: 'password123', hasSetPassword: false },
+  { name: 'King Abdullah', description: 'Computer Enginner', password: 'password123', hasSetPassword: false },
 ];
 
-const initialInventory: InventoryItem[] = [
-  { id: 'item-1', name: 'Wireless Mouse', type: 'Electronics', quantity: 15, managedBy: 1, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
-  { id: 'item-2', name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, managedBy: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() },
-  { id: 'item-3', name: 'USB-C Hub', type: 'Accessories', quantity: 8, managedBy: 1, createdAt: new Date('2023-10-26T10:10:00Z').toISOString() },
-  { id: 'item-4', name: 'Monitor Stand', type: 'Furniture', quantity: 1, managedBy: 3, createdAt: new Date('2023-10-26T10:15:00Z').toISOString() },
-  { id: 'item-5', name: 'Laptop Sleeve', type: 'Accessories', quantity: 25, managedBy: 4, createdAt: new Date('2023-10-26T10:20:00Z').toISOString() },
-  { id: 'item-6', name: 'Webcam 1080p', type: 'Electronics', quantity: 0, managedBy: 5, createdAt: new Date('2023-10-26T10:25:00Z').toISOString() },
+const initialInventory: Omit<InventoryItem, 'id' | 'managedBy'>[] = [
+  { name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
+  { name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() },
+  { name: 'USB-C Hub', type: 'Accessories', quantity: 8, createdAt: new Date('2023-10-26T10:10:00Z').toISOString() },
+  { name: 'Monitor Stand', type: 'Furniture', quantity: 1, createdAt: new Date('2023-10-26T10:15:00Z').toISOString() },
+  { name: 'Laptop Sleeve', type: 'Accessories', quantity: 25, createdAt: new Date('2023-10-26T10:20:00Z').toISOString() },
+  { name: 'Webcam 1080p', type: 'Electronics', quantity: 0, createdAt: new Date('2023-10-26T10:25:00Z').toISOString() },
 ];
-
-const initialOrderRequests: OrderRequest[] = [
-    { id: 'wish-1', itemName: 'Mechanical Keyboard (Blue Switch)', notes: 'Customer wants a clicky one.', requestedBy: 'Customer Inquiry', createdAt: new Date('2023-10-27T11:00:00Z').toISOString() },
-];
-
-const initialTasks: Task[] = [];
-const initialDailyOrders: DailyOrder[] = [];
-
-// Generic migration function to add a timestamp to any object that lacks one.
-const runMigration = <T extends { createdAt?: string }>(items: T[], defaultCreatorId: number): T[] => {
-    const now = new Date();
-    return items.map((item, index) => {
-        const newItem = { ...item };
-        if (!newItem.createdAt) {
-            newItem.createdAt = new Date(now.getTime() - (items.length - index) * 60000).toISOString();
-        }
-        if ('assignedTo' in newItem && !(newItem as any).createdBy) {
-            (newItem as any).createdBy = defaultCreatorId;
-        }
-        return newItem as T;
-    });
-};
 
 
 const UserSelectionPage: React.FC<{ users: User[]; onSelectUser: (user: User) => void; }> = ({ users, onSelectUser }) => (
@@ -92,7 +71,6 @@ const AuthPage: React.FC<{
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        // Simple validation, can be enhanced
         if (!password) {
             setError('Password cannot be empty.');
             return;
@@ -209,7 +187,6 @@ const PasswordModal: React.FC<{
     );
 };
 
-
 const playSound = (type: 'confirmation' | 'notification') => {
   const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
   if (!AudioContext) return;
@@ -233,17 +210,43 @@ const playSound = (type: 'confirmation' | 'notification') => {
   oscillator.stop(audioContext.currentTime + 0.4);
 };
 
+const seedDatabase = async () => {
+    const usersRef = db.collection('users');
+    const usersSnapshot = await usersRef.get();
+    if (usersSnapshot.empty) {
+        console.log("Seeding users...");
+        const batch = db.batch();
+        const userDocs = initialUsers.map((user, index) => {
+             const docRef = usersRef.doc(); // Auto-generate ID
+             batch.set(docRef, user);
+             return { ...user, id: docRef.id };
+        });
+        await batch.commit();
+
+        const inventoryRef = db.collection('inventory');
+        console.log("Seeding inventory...");
+        const invBatch = db.batch();
+        initialInventory.forEach((item, index) => {
+            const docRef = inventoryRef.doc(); // Auto-generate ID
+            // Assign a user to manage the item for demo purposes
+            const assignedUserId = userDocs[index % userDocs.length].id;
+            const itemWithUser: Omit<InventoryItem, 'id'> = { ...item, managedBy: assignedUserId };
+            invBatch.set(docRef, itemWithUser);
+        });
+        await invBatch.commit();
+        console.log("Database seeded successfully.");
+    } else {
+        console.log("Database already contains data. Skipping seed.");
+    }
+};
 
 const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(() => {
-    try {
-        const saved = localStorage.getItem('users');
-        // If users exist, use them. Otherwise, initialize from our default list.
-        return saved ? JSON.parse(saved) : initialUsers;
-    } catch {
-        return initialUsers;
-    }
-  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
+  
   const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null);
   const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(() => {
     try {
@@ -251,68 +254,88 @@ const App: React.FC = () => {
         return savedUser ? JSON.parse(savedUser) : null;
     } catch { return null; }
   });
+  
   const [showReminder, setShowReminder] = useState(false);
   const [isSettingFirstPassword, setIsSettingFirstPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('inventory');
-      return runMigration(saved ? JSON.parse(saved) : initialInventory, 1);
-    } catch { return initialInventory; }
-  });
-  const [orderRequests, setOrderRequests] = useState<OrderRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem('orderRequests');
-      return runMigration(saved ? JSON.parse(saved) : initialOrderRequests, 1);
-    } catch { return initialOrderRequests; }
-  });
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    try {
-      const saved = localStorage.getItem('tasks');
-      return runMigration(saved ? JSON.parse(saved) : initialTasks, 1);
-    } catch { return initialTasks; }
-  });
-  const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>(() => {
-    try {
-      const saved = localStorage.getItem('dailyOrders');
-      return runMigration(saved ? JSON.parse(saved) : initialDailyOrders, 1);
-    } catch { return initialDailyOrders; }
-  });
-  
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
-  const [notifications, setNotifications] = useState<Record<string, string[]>>(() => {
-    try {
-      const savedNotifications = localStorage.getItem('notifications');
-      return savedNotifications ? JSON.parse(savedNotifications) : {};
-    } catch { return {}; }
-  });
   const [activeNotifications, setActiveNotifications] = useState<string[]>([]);
+  const [isDbChecked, setIsDbChecked] = useState(false);
 
   useEffect(() => {
-    if (authenticatedUser) {
-        const userNotifications = notifications[authenticatedUser.id];
-        if (userNotifications && userNotifications.length > 0) {
-            playSound('notification');
-            setActiveNotifications(userNotifications);
-            const newNotifications = {...notifications};
-            delete newNotifications[authenticatedUser.id];
-            setNotifications(newNotifications);
-        }
-    }
-  }, [authenticatedUser]);
+      seedDatabase().then(() => setIsDbChecked(true));
+  }, []);
 
-  useEffect(() => { localStorage.setItem('users', JSON.stringify(users)); }, [users]);
-  useEffect(() => { localStorage.setItem('notifications', JSON.stringify(notifications)); }, [notifications]);
-  useEffect(() => { 
+  // Firestore listeners for real-time data
+  useEffect(() => {
+    if (!isDbChecked) return;
+    const unsubscribe = db.collection('users').orderBy('name').onSnapshot(snapshot => {
+        const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(fetchedUsers);
+    });
+    return () => unsubscribe();
+  }, [isDbChecked]);
+
+  useEffect(() => {
+    if (!isDbChecked) return;
+    const unsubscribe = db.collection('inventory').onSnapshot(snapshot => {
+        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+        setInventory(fetchedItems);
+    });
+    return () => unsubscribe();
+  }, [isDbChecked]);
+  
+  useEffect(() => {
+    if (!isDbChecked) return;
+    const unsubscribe = db.collection('orderRequests').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OrderRequest));
+        setOrderRequests(fetchedItems);
+    });
+    return () => unsubscribe();
+  }, [isDbChecked]);
+
+  useEffect(() => {
+    if (!isDbChecked) return;
+    const unsubscribe = db.collection('tasks').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+        setTasks(fetchedItems);
+    });
+    return () => unsubscribe();
+  }, [isDbChecked]);
+
+  useEffect(() => {
+    if (!isDbChecked) return;
+    const unsubscribe = db.collection('dailyOrders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyOrder));
+        setDailyOrders(fetchedItems);
+    });
+    return () => unsubscribe();
+  }, [isDbChecked]);
+
+  // Listen to notifications for the current user
+  useEffect(() => {
+      if (!authenticatedUser) return;
+      const unsubscribe = db.collection('notifications').doc(authenticatedUser.id).onSnapshot(doc => {
+          if (doc.exists) {
+              const data = doc.data();
+              const userNotifications = data?.messages || [];
+              if (userNotifications.length > 0) {
+                  playSound('notification');
+                  setActiveNotifications(userNotifications);
+                  // Clear notifications after showing them
+                  db.collection('notifications').doc(authenticatedUser.id).delete();
+              }
+          }
+      });
+      return () => unsubscribe();
+  }, [authenticatedUser]);
+  
+  // Persist authenticated user in local storage for session management
+  useEffect(() => {
       if (authenticatedUser) localStorage.setItem('authenticatedUser', JSON.stringify(authenticatedUser));
       else localStorage.removeItem('authenticatedUser');
   }, [authenticatedUser]);
-  useEffect(() => { localStorage.setItem('inventory', JSON.stringify(inventory)); }, [inventory]);
-  useEffect(() => { localStorage.setItem('orderRequests', JSON.stringify(orderRequests)); }, [orderRequests]);
-  useEffect(() => { localStorage.setItem('tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('dailyOrders', JSON.stringify(dailyOrders)); }, [dailyOrders]);
-  
+
   useEffect(() => {
     const lastReminderDate = localStorage.getItem('lastReminderDate');
     const today = new Date().toISOString().split('T')[0];
@@ -331,12 +354,11 @@ const App: React.FC = () => {
   
   const handleLogin = (password: string) => {
     if (!selectedUserForLogin) return;
-    const userInDb = users.find(u => u.id === selectedUserForLogin.id);
-    if (userInDb && userInDb.password === password) {
-        if (!userInDb.hasSetPassword) {
+    if (selectedUserForLogin.password === password) {
+        if (!selectedUserForLogin.hasSetPassword) {
             setIsSettingFirstPassword(true);
         } else {
-            setAuthenticatedUser(userInDb);
+            setAuthenticatedUser(selectedUserForLogin);
             setSelectedUserForLogin(null);
             setActiveTab(Tab.Dashboard);
         }
@@ -345,22 +367,22 @@ const App: React.FC = () => {
     }
   };
   
-  const handleSetFirstPassword = ({ newPassword }: Record<string, string>) => {
+  const handleSetFirstPassword = async ({ newPassword }: Record<string, string>) => {
     if (!selectedUserForLogin) return;
-    const updatedUsers = users.map(u => u.id === selectedUserForLogin.id ? { ...u, password: newPassword, hasSetPassword: true } : u);
-    setUsers(updatedUsers);
-    const updatedUser = updatedUsers.find(u => u.id === selectedUserForLogin.id)!;
+    const userRef = db.collection('users').doc(selectedUserForLogin.id);
+    await userRef.update({ password: newPassword, hasSetPassword: true });
+    
+    const updatedUser = { ...selectedUserForLogin, password: newPassword, hasSetPassword: true };
     setAuthenticatedUser(updatedUser);
     setIsSettingFirstPassword(false);
     setSelectedUserForLogin(null);
   };
 
-  const handleChangePassword = ({ currentPassword, newPassword }: Record<string, string>) => {
+  const handleChangePassword = async ({ currentPassword, newPassword }: Record<string, string>) => {
     if (!authenticatedUser) return;
-    const userInDb = users.find(u => u.id === authenticatedUser.id);
-    if (userInDb && userInDb.password === currentPassword) {
-        const updatedUsers = users.map(u => u.id === authenticatedUser.id ? { ...u, password: newPassword } : u);
-        setUsers(updatedUsers);
+    if (authenticatedUser.password === currentPassword) {
+        await db.collection('users').doc(authenticatedUser.id).update({ password: newPassword });
+        setAuthenticatedUser(prev => prev ? {...prev, password: newPassword} : null);
         alert('Password changed successfully!');
         setIsChangingPassword(false);
     } else {
@@ -376,60 +398,67 @@ const App: React.FC = () => {
     setSelectedUserForLogin(null);
   };
   
-  const handleUpdateQuantity = (itemId: string, newQuantity: number) => setInventory(p => p.map(i => i.id === itemId ? { ...i, quantity: Math.max(0, newQuantity) } : i));
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => db.collection('inventory').doc(itemId).update({ quantity: Math.max(0, newQuantity) });
   const handleAddItem = (newItem: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>) => {
     if (!authenticatedUser) return;
-    const item: InventoryItem = { ...newItem, id: `item-${Date.now()}`, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() };
-    setInventory(p => [...p, item]);
+    const item: Omit<InventoryItem, 'id'> = { ...newItem, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() };
+    db.collection('inventory').add(item);
   };
-  const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => setInventory(p => p.map(i => i.id === itemId ? { ...i, ...updates } : i));
-  const handleRemoveItem = (itemId: string) => setInventory(p => p.filter(i => i.id !== itemId));
+  const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => db.collection('inventory').doc(itemId).update(updates);
+  const handleRemoveItem = (itemId: string) => db.collection('inventory').doc(itemId).delete();
   const handleImportItems = (importedItems: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>[]) => {
     if (!authenticatedUser) return;
-    setInventory(currentInventory => {
-      const inventoryMap = new Map(currentInventory.map(item => [`${item.name.toLowerCase()}|${item.type.toLowerCase()}`, item]));
-      importedItems.forEach(importedItem => {
-        const key = `${importedItem.name.toLowerCase()}|${importedItem.type.toLowerCase()}`;
-        const existingItem = inventoryMap.get(key);
-        if (existingItem) existingItem.quantity += importedItem.quantity;
-        else {
-          const newItem: InventoryItem = { ...importedItem, id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() };
-          inventoryMap.set(key, newItem);
-        }
-      });
-      return Array.from(inventoryMap.values());
+    const batch = db.batch();
+    const inventoryRef = db.collection('inventory');
+    
+    importedItems.forEach(item => {
+        const docRef = inventoryRef.doc(); // Create new doc for each imported item
+        const newItem: Omit<InventoryItem, 'id'> = { ...item, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() };
+        batch.set(docRef, newItem);
     });
+    batch.commit().then(() => alert(`Successfully imported ${importedItems.length} items!`));
   };
   const handleAddOrderRequest = (item: Omit<OrderRequest, 'id' | 'createdAt'>) => {
-    const orderRequestItem: OrderRequest = { ...item, id: `order-${Date.now()}`, createdAt: new Date().toISOString() };
-    setOrderRequests(p => [...p, orderRequestItem]);
+    const orderRequestItem: Omit<OrderRequest, 'id'> = { ...item, createdAt: new Date().toISOString() };
+    db.collection('orderRequests').add(orderRequestItem);
   };
-  const handleRemoveOrderRequest = (itemId: string) => setOrderRequests(p => p.filter(i => i.id !== itemId));
-  const handleRestock = (itemId: string, restockQuantity: number) => setInventory(p => p.map(i => i.id === itemId ? { ...i, quantity: i.quantity + restockQuantity } : i));
+  const handleRemoveOrderRequest = (itemId: string) => db.collection('orderRequests').doc(itemId).delete();
+  const handleRestock = (itemId: string, restockQuantity: number) => {
+      const itemRef = db.collection('inventory').doc(itemId);
+      db.runTransaction(async (transaction) => {
+          const doc = await transaction.get(itemRef);
+          if (!doc.exists) { throw "Document does not exist!"; }
+          const newQuantity = (doc.data()?.quantity || 0) + restockQuantity;
+          transaction.update(itemRef, { quantity: newQuantity });
+      });
+  };
   const handleAddTask = (task: Omit<Task, 'id' | 'createdBy' | 'createdAt'>) => {
     if (!authenticatedUser) return;
-    const newTask: Task = { ...task, id: `task-${Date.now()}`, createdBy: authenticatedUser.id, createdAt: new Date().toISOString() };
-    setTasks(p => [...p, newTask]);
+    const newTask: Omit<Task, 'id'> = { ...task, createdBy: authenticatedUser.id, createdAt: new Date().toISOString() };
+    db.collection('tasks').add(newTask);
     if (newTask.assignedTo !== authenticatedUser.id) {
         playSound('confirmation');
         const message = `${authenticatedUser.name} assigned you a new task: "${newTask.description.substring(0, 50)}..."`;
-        setNotifications(prev => {
-            const newNots = {...prev};
-            const userNots = newNots[newTask.assignedTo] || [];
-            newNots[newTask.assignedTo] = [...userNots, message];
-            return newNots;
-        });
+        const notificationRef = db.collection('notifications').doc(newTask.assignedTo);
+        notificationRef.set({ messages: window.firebase.firestore.FieldValue.arrayUnion(message) }, { merge: true });
     }
   };
-  const handleRemoveTask = (taskId: string) => setTasks(p => p.filter(t => t.id !== taskId));
-  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => setTasks(p => p.map(t => t.id === taskId ? { ...t, status } : t));
+  const handleRemoveTask = (taskId: string) => db.collection('tasks').doc(taskId).delete();
+  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => db.collection('tasks').doc(taskId).update({ status });
   const handleAddDailyOrder = (order: Omit<DailyOrder, 'id' | 'createdAt'>) => {
-    const newOrder: DailyOrder = { ...order, id: `d-order-${Date.now()}`, createdAt: new Date().toISOString() };
-    setDailyOrders(p => [newOrder, ...p]);
+    const newOrder: Omit<DailyOrder, 'id'> = { ...order, createdAt: new Date().toISOString() };
+    db.collection('dailyOrders').add(newOrder);
   };
-  const handleRemoveDailyOrder = (orderId: string) => setDailyOrders(p => p.filter(o => o.id !== orderId));
+  const handleRemoveDailyOrder = (orderId: string) => db.collection('dailyOrders').doc(orderId).delete();
 
+  if (!isDbChecked) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-200">Connecting to database...</div>;
+  }
+  
   if (!authenticatedUser) {
+    if (users.length === 0) {
+        return <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-200">Loading user data...</div>;
+    }
     if (!selectedUserForLogin) {
         return <UserSelectionPage users={users} onSelectUser={setSelectedUserForLogin} />;
     }

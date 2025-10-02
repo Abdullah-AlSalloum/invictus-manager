@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string; // Firestore document ID is a string
   name: string;
   description: string;
   password?: string;
@@ -7,11 +7,11 @@ export interface User {
 }
 
 export interface InventoryItem {
-  id: string;
+  id: string; // Firestore document ID is a string
   name: string;
   type: string;
   quantity: number;
-  managedBy: number; // User ID
+  managedBy: string; // This will now store the user's string ID
   supplier?: string;
   createdAt: string; // ISO String
 }
@@ -29,8 +29,8 @@ export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
 export interface Task {
     id: string;
     description: string;
-    assignedTo: number; // User ID
-    createdBy: number; // User ID
+    assignedTo: string; // User ID
+    createdBy: string; // User ID
     dueDate: string; // YYYY-MM-DD
     status: TaskStatus;
     createdAt: string; // ISO String

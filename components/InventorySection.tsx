@@ -80,7 +80,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const getUser = (userId: number) => users.find(u => u.id === userId);
+  const getUser = (userId: string) => users.find(u => u.id === userId);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
