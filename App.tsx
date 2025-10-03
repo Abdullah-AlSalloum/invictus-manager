@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus } from './types';
-import { db } from './firebaseConfig';
+import { getDb } from './firebaseConfig.ts';
 import Header from './components/Header';
 import DashboardSection from './components/DashboardSection';
 import InventorySection from './components/InventorySection';
@@ -210,7 +210,7 @@ const playSound = (type: 'confirmation' | 'notification') => {
   oscillator.stop(audioContext.currentTime + 0.4);
 };
 
-const seedDatabase = async () => {
+const seedDatabase = async (db: any) => {
     const usersRef = db.collection('users');
     const usersSnapshot = await usersRef.get();
     if (usersSnapshot.empty) {
@@ -241,6 +241,7 @@ const seedDatabase = async () => {
 };
 
 const App: React.FC = () => {
+  const [db, setDb] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
@@ -260,62 +261,74 @@ const App: React.FC = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
   const [activeNotifications, setActiveNotifications] = useState<string[]>([]);
-  const [isDbChecked, setIsDbChecked] = useState(false);
 
   useEffect(() => {
-      seedDatabase().then(() => setIsDbChecked(true));
+      getDb()
+        .then(dbInstance => {
+            setDb(dbInstance);
+        })
+        .catch(error => {
+            console.error("FATAL: Could not connect to the database.", error);
+            // Here you could set a global error state to show a message to the user
+        });
   }, []);
+
+  // Effect to seed the database once the connection is established
+  useEffect(() => {
+    if (!db) return;
+    seedDatabase(db);
+  }, [db]);
 
   // Firestore listeners for real-time data
   useEffect(() => {
-    if (!isDbChecked) return;
-    const unsubscribe = db.collection('users').orderBy('name').onSnapshot(snapshot => {
-        const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    if (!db) return;
+    const unsubscribe = db.collection('users').orderBy('name').onSnapshot((snapshot: any) => {
+        const fetchedUsers = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as User));
         setUsers(fetchedUsers);
     });
     return () => unsubscribe();
-  }, [isDbChecked]);
+  }, [db]);
 
   useEffect(() => {
-    if (!isDbChecked) return;
-    const unsubscribe = db.collection('inventory').onSnapshot(snapshot => {
-        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+    if (!db) return;
+    const unsubscribe = db.collection('inventory').onSnapshot((snapshot: any) => {
+        const fetchedItems = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as InventoryItem));
         setInventory(fetchedItems);
     });
     return () => unsubscribe();
-  }, [isDbChecked]);
+  }, [db]);
   
   useEffect(() => {
-    if (!isDbChecked) return;
-    const unsubscribe = db.collection('orderRequests').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OrderRequest));
+    if (!db) return;
+    const unsubscribe = db.collection('orderRequests').orderBy('createdAt', 'desc').onSnapshot((snapshot: any) => {
+        const fetchedItems = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as OrderRequest));
         setOrderRequests(fetchedItems);
     });
     return () => unsubscribe();
-  }, [isDbChecked]);
+  }, [db]);
 
   useEffect(() => {
-    if (!isDbChecked) return;
-    const unsubscribe = db.collection('tasks').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    if (!db) return;
+    const unsubscribe = db.collection('tasks').orderBy('createdAt', 'desc').onSnapshot((snapshot: any) => {
+        const fetchedItems = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(fetchedItems);
     });
     return () => unsubscribe();
-  }, [isDbChecked]);
+  }, [db]);
 
   useEffect(() => {
-    if (!isDbChecked) return;
-    const unsubscribe = db.collection('dailyOrders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyOrder));
+    if (!db) return;
+    const unsubscribe = db.collection('dailyOrders').orderBy('createdAt', 'desc').onSnapshot((snapshot: any) => {
+        const fetchedItems = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as DailyOrder));
         setDailyOrders(fetchedItems);
     });
     return () => unsubscribe();
-  }, [isDbChecked]);
+  }, [db]);
 
   // Listen to notifications for the current user
   useEffect(() => {
-      if (!authenticatedUser) return;
-      const unsubscribe = db.collection('notifications').doc(authenticatedUser.id).onSnapshot(doc => {
+      if (!db || !authenticatedUser) return;
+      const unsubscribe = db.collection('notifications').doc(authenticatedUser.id).onSnapshot((doc: any) => {
           if (doc.exists) {
               const data = doc.data();
               const userNotifications = data?.messages || [];
@@ -328,7 +341,7 @@ const App: React.FC = () => {
           }
       });
       return () => unsubscribe();
-  }, [authenticatedUser]);
+  }, [db, authenticatedUser]);
   
   // Persist authenticated user in local storage for session management
   useEffect(() => {
@@ -368,7 +381,7 @@ const App: React.FC = () => {
   };
   
   const handleSetFirstPassword = async ({ newPassword }: Record<string, string>) => {
-    if (!selectedUserForLogin) return;
+    if (!db || !selectedUserForLogin) return;
     const userRef = db.collection('users').doc(selectedUserForLogin.id);
     await userRef.update({ password: newPassword, hasSetPassword: true });
     
@@ -379,7 +392,7 @@ const App: React.FC = () => {
   };
 
   const handleChangePassword = async ({ currentPassword, newPassword }: Record<string, string>) => {
-    if (!authenticatedUser) return;
+    if (!db || !authenticatedUser) return;
     if (authenticatedUser.password === currentPassword) {
         await db.collection('users').doc(authenticatedUser.id).update({ password: newPassword });
         setAuthenticatedUser(prev => prev ? {...prev, password: newPassword} : null);
@@ -398,16 +411,25 @@ const App: React.FC = () => {
     setSelectedUserForLogin(null);
   };
   
-  const handleUpdateQuantity = (itemId: string, newQuantity: number) => db.collection('inventory').doc(itemId).update({ quantity: Math.max(0, newQuantity) });
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    if (!db) return;
+    db.collection('inventory').doc(itemId).update({ quantity: Math.max(0, newQuantity) });
+  };
   const handleAddItem = (newItem: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>) => {
-    if (!authenticatedUser) return;
+    if (!db || !authenticatedUser) return;
     const item: Omit<InventoryItem, 'id'> = { ...newItem, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() };
     db.collection('inventory').add(item);
   };
-  const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => db.collection('inventory').doc(itemId).update(updates);
-  const handleRemoveItem = (itemId: string) => db.collection('inventory').doc(itemId).delete();
+  const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => {
+    if (!db) return;
+    db.collection('inventory').doc(itemId).update(updates);
+  };
+  const handleRemoveItem = (itemId: string) => {
+    if (!db) return;
+    db.collection('inventory').doc(itemId).delete();
+  };
   const handleImportItems = (importedItems: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>[]) => {
-    if (!authenticatedUser) return;
+    if (!db || !authenticatedUser) return;
     const batch = db.batch();
     const inventoryRef = db.collection('inventory');
     
@@ -419,13 +441,18 @@ const App: React.FC = () => {
     batch.commit().then(() => alert(`Successfully imported ${importedItems.length} items!`));
   };
   const handleAddOrderRequest = (item: Omit<OrderRequest, 'id' | 'createdAt'>) => {
+    if (!db) return;
     const orderRequestItem: Omit<OrderRequest, 'id'> = { ...item, createdAt: new Date().toISOString() };
     db.collection('orderRequests').add(orderRequestItem);
   };
-  const handleRemoveOrderRequest = (itemId: string) => db.collection('orderRequests').doc(itemId).delete();
+  const handleRemoveOrderRequest = (itemId: string) => {
+    if (!db) return;
+    db.collection('orderRequests').doc(itemId).delete();
+  };
   const handleRestock = (itemId: string, restockQuantity: number) => {
+      if (!db) return;
       const itemRef = db.collection('inventory').doc(itemId);
-      db.runTransaction(async (transaction) => {
+      db.runTransaction(async (transaction: any) => {
           const doc = await transaction.get(itemRef);
           if (!doc.exists) { throw "Document does not exist!"; }
           const newQuantity = (doc.data()?.quantity || 0) + restockQuantity;
@@ -433,7 +460,7 @@ const App: React.FC = () => {
       });
   };
   const handleAddTask = (task: Omit<Task, 'id' | 'createdBy' | 'createdAt'>) => {
-    if (!authenticatedUser) return;
+    if (!db || !authenticatedUser) return;
     const newTask: Omit<Task, 'id'> = { ...task, createdBy: authenticatedUser.id, createdAt: new Date().toISOString() };
     db.collection('tasks').add(newTask);
     if (newTask.assignedTo !== authenticatedUser.id) {
@@ -443,15 +470,25 @@ const App: React.FC = () => {
         notificationRef.set({ messages: window.firebase.firestore.FieldValue.arrayUnion(message) }, { merge: true });
     }
   };
-  const handleRemoveTask = (taskId: string) => db.collection('tasks').doc(taskId).delete();
-  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => db.collection('tasks').doc(taskId).update({ status });
+  const handleRemoveTask = (taskId: string) => {
+    if (!db) return;
+    db.collection('tasks').doc(taskId).delete();
+  };
+  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
+    if (!db) return;
+    db.collection('tasks').doc(taskId).update({ status });
+  };
   const handleAddDailyOrder = (order: Omit<DailyOrder, 'id' | 'createdAt'>) => {
+    if (!db) return;
     const newOrder: Omit<DailyOrder, 'id'> = { ...order, createdAt: new Date().toISOString() };
     db.collection('dailyOrders').add(newOrder);
   };
-  const handleRemoveDailyOrder = (orderId: string) => db.collection('dailyOrders').doc(orderId).delete();
+  const handleRemoveDailyOrder = (orderId: string) => {
+    if (!db) return;
+    db.collection('dailyOrders').doc(orderId).delete();
+  };
 
-  if (!isDbChecked) {
+  if (!db) {
     return <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-200">Connecting to database...</div>;
   }
   
