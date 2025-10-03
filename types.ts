@@ -1,17 +1,17 @@
 export interface User {
-  id: string; // Firestore document ID is a string
+  id: string;
   name: string;
   description: string;
-  password?: string;
-  hasSetPassword?: boolean;
+  password: string;
+  hasSetPassword: boolean;
 }
 
 export interface InventoryItem {
-  id: string; // Firestore document ID is a string
+  id: string;
   name: string;
   type: string;
   quantity: number;
-  managedBy: string; // This will now store the user's string ID
+  managedBy: string; // User ID
   supplier?: string;
   createdAt: string; // ISO String
 }

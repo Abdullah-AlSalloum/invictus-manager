@@ -1,6 +1,7 @@
+
 import React, { useMemo } from 'react';
 import { InventoryItem, User, Task, DailyOrder, OrderRequest, Tab } from '../types';
-import { PlusIcon, ClipboardDocumentCheckIcon, TruckIcon } from './icons';
+import { PlusIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon } from './icons';
 import Avatar from './Avatar';
 
 interface DashboardSectionProps {
@@ -91,7 +92,7 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
             <div className="lg:col-span-2 space-y-6">
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatCard title="Items to Reorder" value={reorderItemsCount} icon={<PlusIcon className="h-6 w-6 text-red-800 dark:text-red-200" />} color="bg-red-100 dark:bg-red-900/50" onClick={() => onTabChange(Tab.Reorder)} />
+                    <StatCard title="Items to Reorder" value={reorderItemsCount} icon={<BellIcon className="h-6 w-6 text-red-800 dark:text-red-200" />} color="bg-red-100 dark:bg-red-900/50" onClick={() => onTabChange(Tab.Reorder)} />
                     <StatCard title="Your Pending Tasks" value={myPendingTasks.length} icon={<ClipboardDocumentCheckIcon className="h-6 w-6 text-sky-800 dark:text-sky-200" />} color="bg-sky-100 dark:bg-sky-900/50" onClick={() => onTabChange(Tab.Tasks)} />
                     <StatCard title="Today's Orders Sent" value={todaysOrdersCount} icon={<TruckIcon className="h-6 w-6 text-emerald-800 dark:text-emerald-200" />} color="bg-emerald-100 dark:bg-emerald-900/50" onClick={() => onTabChange(Tab.DailyOrders)} />
                 </div>
