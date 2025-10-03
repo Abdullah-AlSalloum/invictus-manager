@@ -1,5 +1,5 @@
 // This file relies on the Firebase SDKs being loaded globally via script tags in index.html
-
+import { initializeApp } from "firebase/app";
 // Extend the Window interface to include the firebase object for TypeScript
 declare global {
   interface Window {
