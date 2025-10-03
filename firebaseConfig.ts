@@ -1,5 +1,5 @@
 // This file relies on the Firebase SDKs being loaded globally via script tags in index.html
-
+import { initializeApp } from "firebase/app";
 // Extend the Window interface to include the firebase object for TypeScript
 declare global {
   interface Window {
@@ -14,6 +14,8 @@ const firebaseConfig = {
   messagingSenderId: "697070888023",
   appId: "1:697070888023:web:03b6c9351d747d19806f12"
 };
+
+
 
 // Initialize Firebase using the globally available `firebase` object
 if (!window.firebase.apps.length) {

@@ -92,7 +92,7 @@ export const InformationCircleIcon: React.FC<{ className?: string }> = ({ classN
 
 export const ClipboardDocumentCheckIcon: React.FC<{ className?: string }> = ({ className = "h-6 w-6" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.125 2.25h-4.5c-1.125 0-2.25.9-2.25 2.25v15c0 1.125.9 2.25 2.25 2.25h10.5c1.125 0 2.25-.9 2.25-2.25v-15c0-1.125-.9-2.25-2.25-2.25h-4.5m-1.875 0l-1.875-1.875m1.875 1.875v1.875m-1.875-1.875h1.875m9 6.75l-1.5-1.5-1.5 1.5m-3-4.5l-1.5-1.5-1.5 1.5m1.5 1.5l1.5-1.5 1.5 1.5M15.75 9.75h4.5M15.75 12.75h4.5M15.75 15.75h4.5m-4.5-3.75a1.5 1.5 0 01-3 0 1.5 1.5 0 013 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
