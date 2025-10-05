@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { SunIcon, MoonIcon, LogoutIcon, KeyIcon } from './icons';
+import { SunIcon, MoonIcon, LogoutIcon, KeyIcon, Bars3Icon } from './icons';
 import Avatar from './Avatar';
 
 interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
   onOpenChangePassword: () => void;
+  onToggleSidebar: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePassword }) => {
+const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePassword, onToggleSidebar }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -34,14 +35,23 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-white dark:bg-gray-800 shadow-sm relative z-10 shrink-0">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2">
-            <svg className="h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
-            </svg>
-            <span className="text-xl font-semibold text-gray-900 dark:text-white">inventory management</span>
+          <div className="flex items-center">
+            <button
+                onClick={onToggleSidebar}
+                className="lg:hidden p-2 -ml-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                aria-label="Open sidebar"
+            >
+                <Bars3Icon className="h-6 w-6" />
+            </button>
+            <div className="flex items-center space-x-2 ml-2 lg:ml-0">
+              <svg className="h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
+              </svg>
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">Invictus Manager for NASHAWIdental</span>
+            </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <button onClick={toggleDarkMode} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">

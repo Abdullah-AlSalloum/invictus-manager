@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, FC } from 'react';
 import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus } from '../types';
 import { getDb } from '../firebaseConfig.ts';
@@ -10,6 +11,7 @@ import OrderRequestSection from '../components/WishlistSection';
 import TaskSection from '../components/TaskSection';
 import DailyOrdersSection from '../components/DailyOrdersSection';
 import Avatar from '../components/Avatar';
+import Sidebar from '../components/Sidebar';
 import { PlusIcon, ArchiveBoxIcon, ListBulletIcon, InformationCircleIcon, XMarkIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon, HomeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '../components/icons';
 
 const initialUsersList: Omit<User, 'id'>[] = [
@@ -229,6 +231,7 @@ const App: React.FC = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
   const [activeNotifications, setActiveNotifications] = useState<string[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   useEffect(() => {
     const initDb = async () => {
@@ -443,35 +446,32 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
         {isChangingPassword && <PasswordModal title="Change Your Password" onSave={handleChangePassword} onClose={() => setIsChangingPassword(false)} />}
-        <Header currentUser={authenticatedUser} onLogout={handleLogout} onOpenChangePassword={() => setIsChangingPassword(true)} />
-        <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-            <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-              <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
-                <button onClick={() => setActiveTab(Tab.Dashboard)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 shrink-0 ${ activeTab === Tab.Dashboard ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <HomeIcon className="mr-2 h-5 w-5"/> <span>Dashboard</span>
-                </button>
-                <button onClick={() => setActiveTab(Tab.Inventory)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 shrink-0 ${ activeTab === Tab.Inventory ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <ArchiveBoxIcon className="mr-2 h-5 w-5"/> <span>In Stock ({stockItems.length})</span>
-                </button>
-                <button onClick={() => setActiveTab(Tab.Reorder)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 relative shrink-0 ${ activeTab === Tab.Reorder ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <PlusIcon className="mr-2 h-5 w-5"/> <span>Reorder Needed</span>
-                  {reorderItems.length > 0 && (<span className="absolute top-2 -right-3 ml-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{reorderItems.length}</span>)}
-                </button>
-                <button onClick={() => setActiveTab(Tab.OrderRequests)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 shrink-0 ${ activeTab === Tab.OrderRequests ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <ListBulletIcon className="mr-2 h-5 w-5"/> <span>Order Requests ({orderRequests.length})</span>
-                </button>
-                <button onClick={() => setActiveTab(Tab.Tasks)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 shrink-0 ${ activeTab === Tab.Tasks ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <ClipboardDocumentCheckIcon className="mr-2 h-5 w-5"/> <span>Team Tasks ({tasks.length})</span>
-                </button>
-                <button onClick={() => setActiveTab(Tab.DailyOrders)} className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 shrink-0 ${ activeTab === Tab.DailyOrders ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600' }`}>
-                  <TruckIcon className="mr-2 h-5 w-5"/> <span>Daily Orders ({dailyOrders.length})</span>
-                </button>
-              </nav>
-            </div>
-            <div>{renderContent()}</div>
-        </main>
+        <Header 
+            currentUser={authenticatedUser} 
+            onLogout={handleLogout} 
+            onOpenChangePassword={() => setIsChangingPassword(true)}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+        />
+        <div className="flex flex-1 overflow-hidden">
+            <Sidebar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                stockItemsCount={stockItems.length}
+                reorderItemsCount={reorderItems.length}
+                orderRequestsCount={orderRequests.length}
+                tasksCount={tasks.length}
+                dailyOrdersCount={dailyOrders.length}
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
+            />
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                <div className="max-w-7xl mx-auto w-full">
+                    {renderContent()}
+                </div>
+            </main>
+        </div>
     </div>
   );
 };

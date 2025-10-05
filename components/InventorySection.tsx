@@ -187,36 +187,38 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">In Stock Items</h2>
-        <div className="flex items-center space-x-2">
-            <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon className="h-5 w-5 text-gray-400" />
+        <div className="sm:flex sm:items-center sm:justify-between mb-4 gap-4">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">In Stock Items</h2>
+            <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <SearchIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                        type="search"
+                        placeholder="Search by name, type, supplier..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="block w-full sm:w-56 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
                 </div>
-                <input
-                    type="search"
-                    placeholder="Search by name, type, supplier..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+                <div className="flex items-center space-x-2">
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" style={{ display: 'none' }} />
+                     <button onClick={handleImportClick} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+                        Import
+                    </button>
+                     <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                        Export
+                    </button>
+                    <button onClick={() => setShowAddForm(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <PlusIcon className="w-5 h-5 mr-2" />
+                      Add
+                    </button>
+                </div>
             </div>
-             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" style={{ display: 'none' }} />
-             <button onClick={handleImportClick} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
-                Import
-            </button>
-             <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                Export
-            </button>
-            <button onClick={() => setShowAddForm(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add
-            </button>
         </div>
-      </div>
 
       {showAddForm && <AddItemForm onAddItem={onAddItem} onCancel={() => setShowAddForm(false)} />}
       
