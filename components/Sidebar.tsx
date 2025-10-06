@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tab } from '../types';
-import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon } from './icons';
+import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon } from './icons';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -15,10 +15,10 @@ interface SidebarProps {
 }
 
 const NavLink: React.FC<{
-  // FIX: Changed icon prop type from React.ReactNode to React.ReactElement.
-  // This provides a more specific type to React.cloneElement, which expects an element,
-  // and resolves the TypeScript error related to unknown props.
-  icon: React.ReactElement;
+  // FIX: Specified a more precise type for the `icon` prop to ensure TypeScript
+  // recognizes that the passed element accepts a `className`. This resolves the
+  // error with `React.cloneElement`.
+  icon: React.ReactElement<{ className?: string }>;
   label: string;
   isActive: boolean;
   onClick: () => void;
@@ -56,6 +56,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     setIsOpen
 }) => {
+    const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+
+    const inventoryTabs = [Tab.Inventory, Tab.Reorder, Tab.OrderRequests, Tab.DailyOrders];
+    const isInventoryActive = inventoryTabs.includes(activeTab);
+
+    useEffect(() => {
+        if (isInventoryActive) {
+            setIsInventoryOpen(true);
+        }
+    }, [isInventoryActive]);
 
     const handleLinkClick = (tab: Tab) => {
         setActiveTab(tab);
@@ -63,6 +73,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             setIsOpen(false);
         }
     };
+
+    const inventoryBadgeTotal = reorderItemsCount + orderRequestsCount + dailyOrdersCount;
 
     return (
         <>
@@ -90,29 +102,59 @@ const Sidebar: React.FC<SidebarProps> = ({
                         isActive={activeTab === Tab.Dashboard}
                         onClick={() => handleLinkClick(Tab.Dashboard)}
                     />
-                    <NavLink
-                        icon={<ArchiveBoxIcon />}
-                        label="In Stock"
-                        isActive={activeTab === Tab.Inventory}
-                        onClick={() => handleLinkClick(Tab.Inventory)}
-                        badgeCount={stockItemsCount}
-                    />
-                    <NavLink
-                        icon={<PlusIcon />}
-                        label="Reorder Needed"
-                        isActive={activeTab === Tab.Reorder}
-                        onClick={() => handleLinkClick(Tab.Reorder)}
-                        badgeCount={reorderItemsCount}
-                        badgeColor="bg-red-500 text-white"
-                    />
-                    <NavLink
-                        icon={<ListBulletIcon />}
-                        label="Order Requests"
-                        isActive={activeTab === Tab.OrderRequests}
-                        onClick={() => handleLinkClick(Tab.OrderRequests)}
-                        badgeCount={orderRequestsCount}
-                        badgeColor="bg-amber-500 text-white"
-                    />
+                    
+                    {/* Inventory Dropdown */}
+                    <div>
+                        <button
+                            onClick={() => setIsInventoryOpen(!isInventoryOpen)}
+                            className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 group transition-colors duration-200"
+                        >
+                            <ArchiveBoxIcon className={`h-6 w-6 mr-3 ${isInventoryActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}`} />
+                            <span className={`flex-1 text-left ${isInventoryActive ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}>Inventory</span>
+                            {inventoryBadgeTotal > 0 && (
+                                <span className="ml-auto mr-2 inline-block py-0.5 px-2 text-xs font-bold rounded-full bg-indigo-500 text-white">
+                                    {inventoryBadgeTotal}
+                                </span>
+                            )}
+                            <ChevronDownIcon className={`h-5 w-5 transform transition-transform duration-200 ${isInventoryOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        <div className={`pl-5 overflow-hidden transition-all duration-300 ease-in-out ${isInventoryOpen ? 'max-h-96' : 'max-h-0'}`}>
+                            <div className="pt-1 space-y-1 border-l border-gray-200 dark:border-gray-600 ml-4 pl-4">
+                                <NavLink
+                                    icon={<ListBulletIcon />}
+                                    label="In Stock"
+                                    isActive={activeTab === Tab.Inventory}
+                                    onClick={() => handleLinkClick(Tab.Inventory)}
+                                    badgeCount={stockItemsCount}
+                                />
+                                <NavLink
+                                    icon={<PlusIcon />}
+                                    label="Reorder Needed"
+                                    isActive={activeTab === Tab.Reorder}
+                                    onClick={() => handleLinkClick(Tab.Reorder)}
+                                    badgeCount={reorderItemsCount}
+                                    badgeColor="bg-red-500 text-white"
+                                />
+                                <NavLink
+                                    icon={<InformationCircleIcon />}
+                                    label="Order Requests"
+                                    isActive={activeTab === Tab.OrderRequests}
+                                    onClick={() => handleLinkClick(Tab.OrderRequests)}
+                                    badgeCount={orderRequestsCount}
+                                    badgeColor="bg-amber-500 text-white"
+                                />
+                                <NavLink
+                                    icon={<TruckIcon />}
+                                    label="Daily Orders"
+                                    isActive={activeTab === Tab.DailyOrders}
+                                    onClick={() => handleLinkClick(Tab.DailyOrders)}
+                                    badgeCount={dailyOrdersCount}
+                                    badgeColor="bg-emerald-500 text-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <NavLink
                         icon={<ClipboardDocumentCheckIcon />}
                         label="Team Tasks"
@@ -120,14 +162,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => handleLinkClick(Tab.Tasks)}
                         badgeCount={tasksCount}
                         badgeColor="bg-sky-500 text-white"
-                    />
-                    <NavLink
-                        icon={<TruckIcon />}
-                        label="Daily Orders"
-                        isActive={activeTab === Tab.DailyOrders}
-                        onClick={() => handleLinkClick(Tab.DailyOrders)}
-                        badgeCount={dailyOrdersCount}
-                        badgeColor="bg-emerald-500 text-white"
                     />
                 </nav>
             </aside>
