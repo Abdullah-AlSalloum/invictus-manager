@@ -268,8 +268,8 @@ const App: React.FC = () => {
 
             const userValues = Object.values(createdUserRefs);
             const initialInventoryList: Omit<InventoryItem, 'id' | 'managedBy'>[] = [
-                { name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
-                { name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() }
+                { reference: 'MO-W-001', name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
+                { reference: 'KB-E-002', name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() }
             ];
             initialInventoryList.forEach((item, index) => {
                 const itemRef = db.collection('inventory').doc();
@@ -367,27 +367,34 @@ const App: React.FC = () => {
 
     const existingItemsMap = new Map<string, InventoryItem>();
     inventory.forEach(item => {
-        existingItemsMap.set(item.name.toLowerCase(), item);
+        if (item.reference) {
+            existingItemsMap.set(item.reference.toLowerCase(), item);
+        }
     });
 
     for (const itemToImport of itemsToImport) {
-        const existingItem = existingItemsMap.get(itemToImport.name.toLowerCase());
+        const existingItem = itemToImport.reference
+            ? existingItemsMap.get(itemToImport.reference.toLowerCase())
+            : undefined;
 
         if (existingItem) {
             // Item exists, update it
             const itemRef = inventoryCollection.doc(existingItem.id);
             batch.update(itemRef, { 
+                name: itemToImport.name,
                 quantity: itemToImport.quantity,
                 type: itemToImport.type
             });
         } else {
-            // Item is new, add it
-            const newItemRef = inventoryCollection.doc();
-            batch.set(newItemRef, { 
-                ...itemToImport, 
-                managedBy: authenticatedUser.id, 
-                createdAt: new Date().toISOString() 
-            });
+            // Item is new, add it, but only if it has a reference
+            if (itemToImport.reference) {
+                const newItemRef = inventoryCollection.doc();
+                batch.set(newItemRef, { 
+                    ...itemToImport, 
+                    managedBy: authenticatedUser.id, 
+                    createdAt: new Date().toISOString() 
+                });
+            }
         }
     }
 
@@ -493,6 +500,7 @@ const App: React.FC = () => {
       case Tab.Reorder: return <ReorderSection items={reorderItems} users={users} onRestock={handleRestock} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} />;
       case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} />;
       case Tab.Tasks: return <TaskSection tasks={tasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
+      // FIX: Corrected function name from handleRemoveOrder to handleRemoveDailyOrder.
       case Tab.DailyOrders: return <DailyOrdersSection orders={dailyOrders} onAddOrder={handleAddDailyOrder} onRemoveOrder={handleRemoveDailyOrder} />;
       case Tab.Customers: return <CustomerSection customers={customers} onAddCustomer={handleAddCustomer} onRemoveCustomer={handleRemoveCustomer} />;
       default: return null;

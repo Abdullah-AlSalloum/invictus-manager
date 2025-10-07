@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InventoryItem, User } from '../types';
-import { PlusIcon, ArrowUpTrayIcon, TrashIcon, PencilIcon } from './icons';
+// FIX: Imported ArrowDownTrayIcon for the export button and removed unused ArrowUpTrayIcon.
+import { PlusIcon, TrashIcon, PencilIcon, ArrowDownTrayIcon } from './icons';
 import EditItemModal from './EditItemModal';
 
 interface ReorderSectionProps {
@@ -13,13 +14,14 @@ interface ReorderSectionProps {
 }
 
 const AddReorderItemForm: React.FC<{ onAddItem: ReorderSectionProps['onAddItem'], onCancel: () => void }> = ({ onAddItem, onCancel }) => {
+  const [reference, setReference] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && type) {
-      onAddItem({ name, type, quantity: 0 }); // Add with quantity 0 to ensure it's in reorder list
+    if (reference && name && type) {
+      onAddItem({ reference, name, type, quantity: 0 }); // Add with quantity 0 to ensure it's in reorder list
       onCancel();
     }
   };
@@ -28,6 +30,7 @@ const AddReorderItemForm: React.FC<{ onAddItem: ReorderSectionProps['onAddItem']
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 my-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add Item to Reorder List</h3>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input type="text" placeholder="Reference" value={reference} onChange={e => setReference(e.target.value)} required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <input type="text" placeholder="Item Name" value={name} onChange={e => setName(e.target.value)} required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <input type="text" placeholder="Item Type" value={type} onChange={e => setType(e.target.value)} required className="block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <div className="md:col-span-3 flex justify-end space-x-3">
@@ -54,7 +57,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
     };
     
     const handleExport = () => {
-        const headers = ["Item Name", "Type", "Quantity"];
+        const headers = ["Reference", "Item Name", "Type", "Quantity"];
         const escapeCsvCell = (cell: any) => {
             let strCell = String(cell);
             if (strCell.includes(',') || strCell.includes('"') || strCell.includes('\n')) {
@@ -62,7 +65,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
             }
             return strCell;
         };
-        const rows = items.map(item => [item.name, item.type, item.quantity].map(escapeCsvCell).join(','));
+        const rows = items.map(item => [item.reference, item.name, item.type, item.quantity].map(escapeCsvCell).join(','));
         const csvContent = [headers.join(','), ...rows].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -80,7 +83,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Reorder Needed</h2>
             <div className="flex items-center space-x-2">
                  <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                    <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
                     Export
                 </button>
                 <button onClick={() => setShowAddForm(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -110,6 +113,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
                       </span>
                     </div>
                     <div className="ml-4">
+                      <p className="text-sm font-mono text-gray-500 dark:text-gray-400">{item.reference}</p>
                       <p className="text-lg font-medium text-gray-900 dark:text-white truncate">{item.name}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">{item.type}</p>
                     </div>
@@ -135,7 +139,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
                     <button onClick={() => setEditingItem(item)} className="p-2 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-label={`Edit ${item.name}`}>
                       <PencilIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => onRemoveItem(item.id)} className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`Remove ${item.name}`}>
+                    <button onClick={() => { if(window.confirm(`Are you sure you want to remove item "${item.name}"? This action cannot be undone.`)) { onRemoveItem(item.id) } }} className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`Remove ${item.name}`}>
                       <TrashIcon className="h-5 w-5" />
                     </button>
                   </div>

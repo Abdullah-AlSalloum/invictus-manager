@@ -14,17 +14,19 @@ interface InventorySectionProps {
   onUpdateItem: (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => void;
 }
 
-type SortKey = 'name' | 'type' | 'quantity';
+type SortKey = 'reference' | 'name' | 'type' | 'quantity';
 
 const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onCancel: () => void }> = ({ onAddItem, onCancel }) => {
+  const [reference, setReference] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [quantity, setQuantity] = useState(3);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && type && quantity >= 3) {
-      onAddItem({ name, type, quantity });
+    if (reference && name && type && quantity >= 3) {
+      onAddItem({ reference, name, type, quantity });
+      setReference('');
       setName('');
       setType('');
       setQuantity(3);
@@ -35,11 +37,12 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add New Stock Item</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <input type="text" placeholder="Reference" value={reference} onChange={e => setReference(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <input type="text" placeholder="Item Name" value={name} onChange={e => setName(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <input type="text" placeholder="Item Type" value={type} onChange={e => setType(e.target.value)} required className="block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <input type="number" placeholder="Quantity (>=3)" value={quantity} onChange={e => setQuantity(parseInt(e.target.value, 10))} min="3" required className="block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <div className="md:col-span-4 flex justify-end space-x-3">
+            <input type="text" placeholder="Item Type" value={type} onChange={e => setType(e.target.value)} required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <input type="number" placeholder="Quantity (>=3)" value={quantity} onChange={e => setQuantity(parseInt(e.target.value, 10))} min="3" required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <div className="md:col-span-6 flex justify-end space-x-3">
                 <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Cancel</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Add Item</button>
             </div>
@@ -73,7 +76,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortKey, setSortKey] = useState<SortKey>('reference');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -90,8 +93,9 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
 
   const sortedAndFilteredItems = useMemo(() => {
     const filtered = items.filter(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.type.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.reference || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.type || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return filtered.sort((a, b) => {
@@ -111,7 +115,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
   }, [items, searchTerm, sortKey, sortDirection]);
   
   const handleExport = () => {
-    const headers = ["Item Name", "Type", "Quantity"];
+    const headers = ["Reference", "Item Name", "Type", "Quantity"];
     const escapeCsvCell = (cell: any) => {
         let strCell = String(cell ?? '');
         if (strCell.includes(',') || strCell.includes('"') || strCell.includes('\n')) {
@@ -120,7 +124,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
         return strCell;
     };
     const rows = sortedAndFilteredItems.map(item => 
-        [item.name, item.type, item.quantity].map(escapeCsvCell).join(',')
+        [item.reference, item.name, item.type, item.quantity].map(escapeCsvCell).join(',')
     );
     const csvContent = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -146,27 +150,29 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
             if (lines.length < 2) throw new Error("CSV file is empty or has no data rows.");
             
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const refIndex = headers.indexOf('reference');
             const nameIndex = headers.indexOf('item name');
             const typeIndex = headers.indexOf('type');
             const quantityIndex = headers.indexOf('quantity');
             
-            if (nameIndex === -1 || typeIndex === -1 || quantityIndex === -1) {
-                 throw new Error('Invalid CSV format. Please ensure file has "Item Name", "Type", and "Quantity" columns.');
+            if (refIndex === -1 || nameIndex === -1 || typeIndex === -1 || quantityIndex === -1) {
+                 throw new Error('Invalid CSV format. Please ensure file has "Reference", "Item Name", "Type", and "Quantity" columns.');
             }
 
             const importedItems: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>[] = [];
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',');
+                const reference = values[refIndex]?.trim();
                 const name = values[nameIndex]?.trim();
                 const type = values[typeIndex]?.trim();
                 const quantityStr = values[quantityIndex]?.trim();
                 const quantity = parseInt(quantityStr, 10);
 
-                if (!name || !type || isNaN(quantity) || quantity < 0) {
+                if (!reference || !name || !type || isNaN(quantity) || quantity < 0) {
                     console.warn(`Skipping invalid row ${i + 1}: ${lines[i]}`);
                     continue;
                 }
-                importedItems.push({ name, type, quantity });
+                importedItems.push({ reference, name, type, quantity });
             }
             if (importedItems.length === 0) throw new Error("No valid items found in the file.");
             onImportItems(importedItems);
@@ -192,7 +198,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                     </div>
                     <input
                         type="search"
-                        placeholder="Search by name, type..."
+                        placeholder="Search by ref, name, type..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="block w-full sm:w-56 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -201,11 +207,11 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                 <div className="flex items-center space-x-2">
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" style={{ display: 'none' }} />
                      <button onClick={handleImportClick} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+                        <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
                         Import
                     </button>
                      <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                        <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
                         Export
                     </button>
                     <button onClick={() => setShowAddForm(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -223,6 +229,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
+                <SortableHeader label="Reference" sortKey="reference" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader label="Item Name" sortKey="name" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader label="Type" sortKey="type" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Managed By</th>
@@ -235,6 +242,9 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                 const user = getUser(item.managedBy);
                 return (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
+                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-mono text-gray-500 dark:text-gray-400">{item.reference}</div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
                   </td>
@@ -264,14 +274,14 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                     <button onClick={() => setEditingItem(item)} className="p-1 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-label={`Edit ${item.name}`}>
                         <PencilIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => onRemoveItem(item.id)} className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`Remove ${item.name}`}>
+                    <button onClick={() => { if (window.confirm(`Are you sure you want to remove item "${item.name}"? This action cannot be undone.`)) { onRemoveItem(item.id) } }} className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`Remove ${item.name}`}>
                         <TrashIcon className="h-5 w-5" />
                     </button>
                   </td>
                 </tr>
               )}) : (
                 <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                         {searchTerm ? `No items found for "${searchTerm}".` : 'No items in stock. Add one to get started!'}
                     </td>
                 </tr>

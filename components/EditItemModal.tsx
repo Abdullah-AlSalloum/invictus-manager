@@ -10,6 +10,7 @@ interface EditItemModalProps {
 }
 
 const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onClose }) => {
+  const [reference, setReference] = useState(item.reference);
   const [name, setName] = useState(item.name);
   const [type, setType] = useState(item.type);
   const [quantity, setQuantity] = useState(item.quantity);
@@ -29,8 +30,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && type && quantity >= 0) {
-      onSave({ name, type, quantity, managedBy });
+    if (reference && name && type && quantity >= 0) {
+      onSave({ reference, name, type, quantity, managedBy });
       onClose();
     }
   };
@@ -47,6 +48,10 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="edit-reference" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+              <input type="text" id="edit-reference" value={reference} onChange={e => setReference(e.target.value)} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            </div>
             <div>
               <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Item Name</label>
               <input type="text" id="edit-name" value={name} onChange={e => setName(e.target.value)} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />

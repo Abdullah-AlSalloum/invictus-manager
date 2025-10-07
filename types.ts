@@ -8,6 +8,7 @@ export interface User {
 
 export interface InventoryItem {
   id: string;
+  reference: string;
   name: string;
   type: string;
   quantity: number;
