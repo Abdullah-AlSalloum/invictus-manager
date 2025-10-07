@@ -12,7 +12,6 @@ export interface InventoryItem {
   type: string;
   quantity: number;
   managedBy: string; // User ID
-  supplier?: string;
   createdAt: string; // ISO String
 }
 

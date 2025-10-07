@@ -14,7 +14,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
   const [type, setType] = useState(item.type);
   const [quantity, setQuantity] = useState(item.quantity);
   const [managedBy, setManagedBy] = useState(item.managedBy);
-  const [supplier, setSupplier] = useState(item.supplier || '');
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -31,7 +30,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name && type && quantity >= 0) {
-      onSave({ name, type, quantity, managedBy, supplier });
+      onSave({ name, type, quantity, managedBy });
       onClose();
     }
   };
@@ -55,10 +54,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
             <div>
               <label htmlFor="edit-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Item Type</label>
               <input type="text" id="edit-type" value={type} onChange={e => setType(e.target.value)} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            </div>
-             <div>
-              <label htmlFor="edit-supplier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier (Optional)</label>
-              <input type="text" id="edit-supplier" value={supplier} onChange={e => setSupplier(e.target.value)} className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             </div>
             <div>
               <label htmlFor="edit-quantity" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>

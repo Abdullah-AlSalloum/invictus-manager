@@ -268,8 +268,8 @@ const App: React.FC = () => {
 
             const userValues = Object.values(createdUserRefs);
             const initialInventoryList: Omit<InventoryItem, 'id' | 'managedBy'>[] = [
-                { name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString(), supplier: 'TechSupply' },
-                { name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString(), supplier: 'OfficeGoods' }
+                { name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
+                { name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() }
             ];
             initialInventoryList.forEach((item, index) => {
                 const itemRef = db.collection('inventory').doc();
@@ -355,6 +355,50 @@ const App: React.FC = () => {
   const handleRemoveItem = (itemId: string) => {
     db?.collection('inventory').doc(itemId).delete();
   };
+  
+  const handleImportItems = async (itemsToImport: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>[]) => {
+    if (!db || !authenticatedUser) {
+        alert("Authentication error. Cannot import items.");
+        return;
+    }
+
+    const batch = db.batch();
+    const inventoryCollection = db.collection('inventory');
+
+    const existingItemsMap = new Map<string, InventoryItem>();
+    inventory.forEach(item => {
+        existingItemsMap.set(item.name.toLowerCase(), item);
+    });
+
+    for (const itemToImport of itemsToImport) {
+        const existingItem = existingItemsMap.get(itemToImport.name.toLowerCase());
+
+        if (existingItem) {
+            // Item exists, update it
+            const itemRef = inventoryCollection.doc(existingItem.id);
+            batch.update(itemRef, { 
+                quantity: itemToImport.quantity,
+                type: itemToImport.type
+            });
+        } else {
+            // Item is new, add it
+            const newItemRef = inventoryCollection.doc();
+            batch.set(newItemRef, { 
+                ...itemToImport, 
+                managedBy: authenticatedUser.id, 
+                createdAt: new Date().toISOString() 
+            });
+        }
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error committing batch import:", error);
+        alert(`An error occurred during the import process. Please check the console for details.`);
+    }
+  };
+
   const handleAddTask = (task: Omit<Task, 'id' | 'createdBy' | 'createdAt'>) => {
     if (!db || !authenticatedUser) return;
     // FIX: Explicitly type `newTask` to prevent type inference issues.
@@ -445,7 +489,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case Tab.Dashboard: return <DashboardSection currentUser={authenticatedUser} users={users} inventory={inventory} tasks={tasks} dailyOrders={dailyOrders} orderRequests={orderRequests} onTabChange={setActiveTab} />;
-      case Tab.Inventory: return <InventorySection items={stockItems} onUpdateQuantity={(id, qty) => handleUpdateItem(id, { quantity: qty })} onAddItem={handleAddItem} onImportItems={()=>{}} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} users={users} />;
+      case Tab.Inventory: return <InventorySection items={stockItems} onUpdateQuantity={(id, qty) => handleUpdateItem(id, { quantity: qty })} onAddItem={handleAddItem} onImportItems={handleImportItems} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} users={users} />;
       case Tab.Reorder: return <ReorderSection items={reorderItems} users={users} onRestock={handleRestock} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} />;
       case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} />;
       case Tab.Tasks: return <TaskSection tasks={tasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
