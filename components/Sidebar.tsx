@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tab } from '../types';
-import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon, UserGroupIcon } from './icons';
+import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon, UserGroupIcon, ClockIcon } from './icons';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -11,6 +11,7 @@ interface SidebarProps {
   tasksCount: number;
   dailyOrdersCount: number;
   customersCount: number;
+  backordersCount: number;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -55,12 +56,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     tasksCount,
     dailyOrdersCount,
     customersCount,
+    backordersCount,
     isOpen,
     setIsOpen
 }) => {
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
-    const inventoryTabs = [Tab.Inventory, Tab.Reorder, Tab.OrderRequests, Tab.DailyOrders];
+    const inventoryTabs = [Tab.Inventory, Tab.Reorder, Tab.OrderRequests, Tab.DailyOrders, Tab.Backorder];
     const isInventoryActive = inventoryTabs.includes(activeTab);
 
     useEffect(() => {
@@ -76,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const inventoryBadgeTotal = reorderItemsCount + orderRequestsCount + dailyOrdersCount;
+    const inventoryBadgeTotal = reorderItemsCount + orderRequestsCount + dailyOrdersCount + backordersCount;
 
     return (
         <>
@@ -152,6 +154,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     onClick={() => handleLinkClick(Tab.DailyOrders)}
                                     badgeCount={dailyOrdersCount}
                                     badgeColor="bg-emerald-500 text-white"
+                                />
+                                 <NavLink
+                                    icon={<ClockIcon />}
+                                    label="Backorder"
+                                    isActive={activeTab === Tab.Backorder}
+                                    onClick={() => handleLinkClick(Tab.Backorder)}
+                                    badgeCount={backordersCount}
+                                    badgeColor="bg-yellow-500 text-white"
                                 />
                             </div>
                         </div>

@@ -52,6 +52,14 @@ export interface Customer {
   createdAt: string; // ISO String
 }
 
+export interface Backorder {
+  id: string;
+  userId: string; // User ID
+  customerName: string;
+  orderDetails: string;
+  createdAt: string; // ISO String
+}
+
 export enum Tab {
   Dashboard = 'DASHBOARD',
   Inventory = 'INVENTORY',
@@ -60,4 +68,5 @@ export enum Tab {
   Tasks = 'TASKS',
   DailyOrders = 'DAILY_ORDERS',
   Customers = 'CUSTOMERS',
+  Backorder = 'BACKORDER',
 }

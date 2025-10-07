@@ -11,6 +11,21 @@
         darkMode: 'class',
       }
     </script>
+    <style>
+      @keyframes fade-in-right {
+          from {
+              opacity: 0;
+              transform: translateX(100%);
+          }
+          to {
+              opacity: 1;
+              transform: translateX(0);
+          }
+      }
+      .animate-fade-in-right {
+          animation: fade-in-right 0.5s ease-out forwards;
+      }
+    </style>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -24,7 +39,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "path": "https://aistudiocdn.com/path@^0.12.7",
     "vite": "https://aistudiocdn.com/vite@^7.1.9",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
+    "url": "https://aistudiocdn.com/url@^0.11.4"
   }
 }
 </script>

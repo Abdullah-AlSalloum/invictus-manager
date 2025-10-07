@@ -1,7 +1,6 @@
 
-
-import React, { useState, useEffect, useMemo, FC } from 'react';
-import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Customer } from '../types';
+import React, { useState, useEffect, useMemo, FC, useRef } from 'react';
+import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Customer, Backorder } from '../types';
 import { getDb } from '../firebaseConfig.ts';
 import Header from '../components/Header';
 import DashboardSection from '../components/DashboardSection';
@@ -11,8 +10,10 @@ import OrderRequestSection from '../components/WishlistSection';
 import TaskSection from '../components/TaskSection';
 import DailyOrdersSection from '../components/DailyOrdersSection';
 import CustomerSection from '../components/CustomerSection';
+import BackorderSection from '../components/BackorderSection';
 import Avatar from '../components/Avatar';
 import Sidebar from '../components/Sidebar';
+import { NotificationContainer } from '../components/Notification';
 import { PlusIcon, ArchiveBoxIcon, ListBulletIcon, InformationCircleIcon, XMarkIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon, HomeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '../components/icons';
 
 const initialUsersList: Omit<User, 'id'>[] = [
@@ -224,6 +225,7 @@ const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [backorders, setBackorders] = useState<Backorder[]>([]);
   const [notifications, setNotifications] = useState<Record<string, string[]>>({});
 
   const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null);
@@ -232,7 +234,8 @@ const App: React.FC = () => {
   const [isSettingFirstPassword, setIsSettingFirstPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
-  const [activeNotifications, setActiveNotifications] = useState<string[]>([]);
+  const [activeNotifications, setActiveNotifications] = useState<{id: number; message: string}[]>([]);
+  const notificationIdCounter = useRef(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   useEffect(() => {
@@ -289,6 +292,7 @@ const App: React.FC = () => {
         db.collection('tasks').onSnapshot((snapshot: any) => setTasks(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as Task)))),
         db.collection('dailyOrders').onSnapshot((snapshot: any) => setDailyOrders(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as DailyOrder)))),
         db.collection('customers').onSnapshot((snapshot: any) => setCustomers(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as Customer)))),
+        db.collection('backorders').onSnapshot((snapshot: any) => setBackorders(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as Backorder)))),
         db.collection('notifications').onSnapshot((snapshot: any) => {
             const notifs: Record<string, string[]> = {};
             snapshot.forEach((doc: any) => { notifs[doc.id] = doc.data().messages; });
@@ -301,7 +305,12 @@ const App: React.FC = () => {
    useEffect(() => {
     if (authenticatedUser && notifications[authenticatedUser.id]) {
         playSound('notification');
-        setActiveNotifications(notifications[authenticatedUser.id]);
+        const newMessages = notifications[authenticatedUser.id];
+        const newNotifications = newMessages.map(message => ({
+            id: notificationIdCounter.current++,
+            message,
+        }));
+        setActiveNotifications(prev => [...prev, ...newNotifications]);
         db?.collection('notifications').doc(authenticatedUser.id).delete();
     }
   }, [authenticatedUser, notifications, db]);
@@ -352,8 +361,14 @@ const App: React.FC = () => {
   const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => {
     db?.collection('inventory').doc(itemId).update(updates);
   };
-  const handleRemoveItem = (itemId: string) => {
-    db?.collection('inventory').doc(itemId).delete();
+  const handleRemoveItem = async (itemId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('inventory').doc(itemId).delete();
+    } catch (error) {
+        console.error("Error removing item:", error);
+        alert("An error occurred while trying to remove the item. Please try again.");
+    }
   };
   
   const handleImportItems = async (itemsToImport: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>[]) => {
@@ -425,20 +440,38 @@ const App: React.FC = () => {
   const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
      db?.collection('tasks').doc(taskId).update({ status });
   };
-  const handleRemoveTask = (taskId: string) => {
-    db?.collection('tasks').doc(taskId).delete();
+  const handleRemoveTask = async (taskId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('tasks').doc(taskId).delete();
+    } catch (error) {
+        console.error("Error removing task:", error);
+        alert("An error occurred while trying to remove the task. Please try again.");
+    }
   };
   const handleAddDailyOrder = (order: Omit<DailyOrder, 'id' | 'createdAt'>) => {
     db?.collection('dailyOrders').add({ ...order, createdAt: new Date().toISOString() });
   };
-  const handleRemoveDailyOrder = (orderId: string) => {
-    db?.collection('dailyOrders').doc(orderId).delete();
+  const handleRemoveDailyOrder = async (orderId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('dailyOrders').doc(orderId).delete();
+    } catch (error) {
+        console.error("Error removing daily order:", error);
+        alert("An error occurred while trying to remove the daily order. Please try again.");
+    }
   };
    const handleAddOrderRequest = (item: Omit<OrderRequest, 'id' | 'createdAt'>) => {
     db?.collection('orderRequests').add({ ...item, createdAt: new Date().toISOString() });
   };
-  const handleRemoveOrderRequest = (itemId: string) => {
-    db?.collection('orderRequests').doc(itemId).delete();
+  const handleRemoveOrderRequest = async (itemId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('orderRequests').doc(itemId).delete();
+    } catch (error) {
+        console.error("Error removing order request:", error);
+        alert("An error occurred while trying to remove the order request. Please try again.");
+    }
   };
   const handleRestock = (itemId: string, restockQuantity: number) => {
     if (!db) return;
@@ -449,8 +482,30 @@ const App: React.FC = () => {
   const handleAddCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>) => {
     db?.collection('customers').add({ ...customer, createdAt: new Date().toISOString() });
   };
-  const handleRemoveCustomer = (customerId: string) => {
-    db?.collection('customers').doc(customerId).delete();
+  const handleRemoveCustomer = async (customerId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('customers').doc(customerId).delete();
+    } catch (error) {
+        console.error("Error removing customer:", error);
+        alert("An error occurred while trying to remove the customer. Please try again.");
+    }
+  };
+  const handleAddBackorder = (order: Omit<Backorder, 'id' | 'userId' | 'createdAt'>) => {
+    if (!db || !authenticatedUser) return;
+    db.collection('backorders').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
+  };
+  const handleRemoveBackorder = async (orderId: string) => {
+    if (!db) return;
+    try {
+        await db.collection('backorders').doc(orderId).delete();
+    } catch (error) {
+        console.error("Error removing backorder:", error);
+        alert("An error occurred while trying to remove the backorder. Please try again.");
+    }
+  };
+   const handleRemoveNotification = (id: number) => {
+    setActiveNotifications(prev => prev.filter(n => n.id !== id));
   };
   
   // --- UI Render ---
@@ -503,12 +558,14 @@ const App: React.FC = () => {
       // FIX: Corrected function name from handleRemoveOrder to handleRemoveDailyOrder.
       case Tab.DailyOrders: return <DailyOrdersSection orders={dailyOrders} onAddOrder={handleAddDailyOrder} onRemoveOrder={handleRemoveDailyOrder} />;
       case Tab.Customers: return <CustomerSection customers={customers} onAddCustomer={handleAddCustomer} onRemoveCustomer={handleRemoveCustomer} />;
+      case Tab.Backorder: return <BackorderSection backorders={backorders} users={users} onAddBackorder={handleAddBackorder} onRemoveBackorder={handleRemoveBackorder} />;
       default: return null;
     }
   };
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+        <NotificationContainer notifications={activeNotifications} onRemoveNotification={handleRemoveNotification} />
         {isChangingPassword && <PasswordModal title="Change Your Password" onSave={handleChangePassword} onClose={() => setIsChangingPassword(false)} />}
         <Header 
             currentUser={authenticatedUser} 
@@ -526,6 +583,7 @@ const App: React.FC = () => {
                 tasksCount={tasks.length}
                 dailyOrdersCount={dailyOrders.length}
                 customersCount={customers.length}
+                backordersCount={backorders.length}
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
