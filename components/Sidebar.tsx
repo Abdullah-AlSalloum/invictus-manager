@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tab } from '../types';
-import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon } from './icons';
+import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon, UserGroupIcon } from './icons';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -10,6 +10,7 @@ interface SidebarProps {
   orderRequestsCount: number;
   tasksCount: number;
   dailyOrdersCount: number;
+  customersCount: number;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -53,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     orderRequestsCount,
     tasksCount,
     dailyOrdersCount,
+    customersCount,
     isOpen,
     setIsOpen
 }) => {
@@ -162,6 +164,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => handleLinkClick(Tab.Tasks)}
                         badgeCount={tasksCount}
                         badgeColor="bg-sky-500 text-white"
+                    />
+                    <NavLink
+                        icon={<UserGroupIcon />}
+                        label="Customers"
+                        isActive={activeTab === Tab.Customers}
+                        onClick={() => handleLinkClick(Tab.Customers)}
+                        badgeCount={customersCount}
+                        badgeColor="bg-purple-500 text-white"
                     />
                 </nav>
             </aside>

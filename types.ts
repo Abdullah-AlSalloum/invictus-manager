@@ -44,6 +44,14 @@ export interface DailyOrder {
     createdAt: string; // ISO String
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  googleMapsLink: string;
+  createdAt: string; // ISO String
+}
+
 export enum Tab {
   Dashboard = 'DASHBOARD',
   Inventory = 'INVENTORY',
@@ -51,4 +59,5 @@ export enum Tab {
   OrderRequests = 'ORDER_REQUESTS',
   Tasks = 'TASKS',
   DailyOrders = 'DAILY_ORDERS',
+  Customers = 'CUSTOMERS',
 }

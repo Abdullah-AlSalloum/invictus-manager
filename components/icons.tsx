@@ -156,3 +156,15 @@ export const Bars3Icon: React.FC<{ className?: string }> = ({ className = "h-6 w
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
     </svg>
 );
+
+export const UserGroupIcon: React.FC<{ className?: string }> = ({ className = "h-6 w-6" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 00-12 0m12 0a9.094 9.094 0 01-12 0m12 0v-2.25M12 14.25v-2.25m0-4.5v-2.25m-6 6.75v-2.25m6 2.25a9.091 9.091 0 00-6-2.25m0 0a9.091 9.091 0 016-2.25m0 0a9.091 9.091 0 016 2.25m-6 2.25a9.091 9.091 0 006-2.25m6 0a9.091 9.091 0 01-6 2.25m0 0a9.091 9.091 0 00-6 2.25M3.75 12a9.091 9.091 0 016-2.25m6 0a9.091 9.091 0 016 2.25m0 0a9.091 9.091 0 00-6-2.25m-6 0a9.091 9.091 0 00-6-2.25m12 0a9.091 9.091 0 01-6 2.25" />
+    </svg>
+);
+
+export const LinkIcon: React.FC<{ className?: string }> = ({ className = "h-6 w-6" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+);

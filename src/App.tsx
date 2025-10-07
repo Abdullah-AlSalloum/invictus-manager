@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useMemo, FC } from 'react';
-import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus } from '../types';
+import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Customer } from '../types';
 import { getDb } from '../firebaseConfig.ts';
 import Header from '../components/Header';
 import DashboardSection from '../components/DashboardSection';
@@ -10,6 +10,7 @@ import ReorderSection from '../components/ReorderSection';
 import OrderRequestSection from '../components/WishlistSection';
 import TaskSection from '../components/TaskSection';
 import DailyOrdersSection from '../components/DailyOrdersSection';
+import CustomerSection from '../components/CustomerSection';
 import Avatar from '../components/Avatar';
 import Sidebar from '../components/Sidebar';
 import { PlusIcon, ArchiveBoxIcon, ListBulletIcon, InformationCircleIcon, XMarkIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon, HomeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '../components/icons';
@@ -222,6 +223,7 @@ const App: React.FC = () => {
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [notifications, setNotifications] = useState<Record<string, string[]>>({});
 
   const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null);
@@ -286,6 +288,7 @@ const App: React.FC = () => {
         db.collection('orderRequests').onSnapshot((snapshot: any) => setOrderRequests(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as OrderRequest)))),
         db.collection('tasks').onSnapshot((snapshot: any) => setTasks(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as Task)))),
         db.collection('dailyOrders').onSnapshot((snapshot: any) => setDailyOrders(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as DailyOrder)))),
+        db.collection('customers').onSnapshot((snapshot: any) => setCustomers(snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id } as Customer)))),
         db.collection('notifications').onSnapshot((snapshot: any) => {
             const notifs: Record<string, string[]> = {};
             snapshot.forEach((doc: any) => { notifs[doc.id] = doc.data().messages; });
@@ -392,6 +395,12 @@ const App: React.FC = () => {
     const FieldValue = window.firebase.firestore.FieldValue;
     db.collection('inventory').doc(itemId).update({ quantity: FieldValue.increment(restockQuantity) });
   };
+  const handleAddCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>) => {
+    db?.collection('customers').add({ ...customer, createdAt: new Date().toISOString() });
+  };
+  const handleRemoveCustomer = (customerId: string) => {
+    db?.collection('customers').doc(customerId).delete();
+  };
   
   // --- UI Render ---
 
@@ -441,6 +450,7 @@ const App: React.FC = () => {
       case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} />;
       case Tab.Tasks: return <TaskSection tasks={tasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
       case Tab.DailyOrders: return <DailyOrdersSection orders={dailyOrders} onAddOrder={handleAddDailyOrder} onRemoveOrder={handleRemoveDailyOrder} />;
+      case Tab.Customers: return <CustomerSection customers={customers} onAddCustomer={handleAddCustomer} onRemoveCustomer={handleRemoveCustomer} />;
       default: return null;
     }
   };
@@ -463,6 +473,7 @@ const App: React.FC = () => {
                 orderRequestsCount={orderRequests.length}
                 tasksCount={tasks.length}
                 dailyOrdersCount={dailyOrders.length}
+                customersCount={customers.length}
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />
