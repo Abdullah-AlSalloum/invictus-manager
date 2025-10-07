@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
               <svg className="h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
               </svg>
-              <span className="text-xl font-semibold text-gray-900 dark:text-white">inventory management</span>
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">Invictus Manager</span>
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
