@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo, FC, useRef } from 'react';
-import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Customer, Backorder } from '../types';
+import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Customer, Backorder, OrderItem } from '../types';
 import { getDb } from '../firebaseConfig.ts';
 import Header from '../components/Header';
 import DashboardSection from '../components/DashboardSection';
@@ -461,8 +460,9 @@ const App: React.FC = () => {
         alert("An error occurred while trying to remove the daily order. Please try again.");
     }
   };
-   const handleAddOrderRequest = (item: Omit<OrderRequest, 'id' | 'createdAt'>) => {
-    db?.collection('orderRequests').add({ ...item, createdAt: new Date().toISOString() });
+   const handleAddOrderRequest = (order: Omit<OrderRequest, 'id' | 'userId' | 'createdAt'>) => {
+    if (!db || !authenticatedUser) return;
+    db.collection('orderRequests').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
   };
   const handleRemoveOrderRequest = async (itemId: string) => {
     if (!db) return;
@@ -471,6 +471,69 @@ const App: React.FC = () => {
     } catch (error) {
         console.error("Error removing order request:", error);
         alert("An error occurred while trying to remove the order request. Please try again.");
+    }
+  };
+  const handleMoveToBackorder = async (order: OrderRequest) => {
+    if (!db) return;
+
+    if (!Array.isArray(order.orderDetails) || typeof order.orderDetails[0] !== 'object') {
+        alert("Cannot process this old order format automatically. Please handle it manually.");
+        return;
+    }
+
+    const itemsToBackorder: OrderItem[] = [];
+    const itemsToFulfill: OrderItem[] = [];
+
+    const inventoryMap = new Map(inventory.map(item => [item.name.toLowerCase(), item.quantity]));
+
+    for (const requestedItem of order.orderDetails as OrderItem[]) {
+        const availableQuantity = inventoryMap.get(requestedItem.name.toLowerCase()) || 0;
+
+        if (requestedItem.quantity > availableQuantity) {
+            const shortfall = requestedItem.quantity - availableQuantity;
+            itemsToBackorder.push({
+                name: requestedItem.name,
+                quantity: shortfall,
+            });
+
+            if (availableQuantity > 0) {
+                itemsToFulfill.push({
+                    name: requestedItem.name,
+                    quantity: availableQuantity,
+                });
+            }
+        } else {
+            itemsToFulfill.push(requestedItem);
+        }
+    }
+
+    try {
+        const batch = db.batch();
+        
+        if (itemsToBackorder.length > 0) {
+            const backorderRef = db.collection('backorders').doc();
+            const backorderToAdd: Omit<Backorder, 'id'> = {
+                userId: order.userId,
+                customerName: order.customerName,
+                orderDetails: itemsToBackorder,
+                createdAt: new Date().toISOString(),
+            };
+            batch.set(backorderRef, backorderToAdd);
+        }
+
+        const orderRequestRef = db.collection('orderRequests').doc(order.id);
+
+        if (itemsToFulfill.length > 0) {
+            batch.update(orderRequestRef, { orderDetails: itemsToFulfill });
+        } else {
+            batch.delete(orderRequestRef);
+        }
+        
+        await batch.commit();
+        
+    } catch (error) {
+        console.error("Error splitting order request:", error);
+        alert("An error occurred while processing the order. Please try again.");
     }
   };
   const handleRestock = (itemId: string, restockQuantity: number) => {
@@ -553,12 +616,12 @@ const App: React.FC = () => {
       case Tab.Dashboard: return <DashboardSection currentUser={authenticatedUser} users={users} inventory={inventory} tasks={tasks} dailyOrders={dailyOrders} orderRequests={orderRequests} onTabChange={setActiveTab} />;
       case Tab.Inventory: return <InventorySection items={stockItems} onUpdateQuantity={(id, qty) => handleUpdateItem(id, { quantity: qty })} onAddItem={handleAddItem} onImportItems={handleImportItems} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} users={users} />;
       case Tab.Reorder: return <ReorderSection items={reorderItems} users={users} onRestock={handleRestock} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} />;
-      case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} />;
+      case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} users={users} inventory={inventory} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} onMoveToBackorder={handleMoveToBackorder} />;
       case Tab.Tasks: return <TaskSection tasks={tasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
       // FIX: Corrected function name from handleRemoveOrder to handleRemoveDailyOrder.
       case Tab.DailyOrders: return <DailyOrdersSection orders={dailyOrders} onAddOrder={handleAddDailyOrder} onRemoveOrder={handleRemoveDailyOrder} />;
       case Tab.Customers: return <CustomerSection customers={customers} onAddCustomer={handleAddCustomer} onRemoveCustomer={handleRemoveCustomer} />;
-      case Tab.Backorder: return <BackorderSection backorders={backorders} users={users} onAddBackorder={handleAddBackorder} onRemoveBackorder={handleRemoveBackorder} />;
+      case Tab.Backorder: return <BackorderSection backorders={backorders} users={users} onRemoveBackorder={handleRemoveBackorder} />;
       default: return null;
     }
   };

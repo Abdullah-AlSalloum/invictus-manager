@@ -16,11 +16,16 @@ export interface InventoryItem {
   createdAt: string; // ISO String
 }
 
+export interface OrderItem {
+  name: string;
+  quantity: number;
+}
+
 export interface OrderRequest {
   id: string;
-  itemName: string;
-  notes: string;
-  requestedBy: string;
+  userId: string; // User ID
+  customerName: string;
+  orderDetails: string | string[] | OrderItem[];
   createdAt: string; // ISO String
 }
 
@@ -53,10 +58,10 @@ export interface Customer {
 }
 
 export interface Backorder {
-  id: string;
+  id:string;
   userId: string; // User ID
   customerName: string;
-  orderDetails: string;
+  orderDetails: string | string[] | OrderItem[];
   createdAt: string; // ISO String
 }
 

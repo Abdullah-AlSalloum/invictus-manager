@@ -64,7 +64,8 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
         });
         
         orderRequests.forEach(req => {
-            activities.push({ type: 'REQUEST_ADD', timestamp: req.createdAt, user: undefined, details: `logged a new request for "${req.itemName}".` });
+// FIX: Corrected property from `itemName` to `customerName` to align with the `OrderRequest` type. The activity message and user have also been updated for better clarity.
+            activities.push({ type: 'REQUEST_ADD', timestamp: req.createdAt, user: getUser(req.userId), details: `logged a new order request from "${req.customerName}".` });
         })
 
         return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
