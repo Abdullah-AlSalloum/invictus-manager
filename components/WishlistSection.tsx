@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { OrderRequest, User, OrderItem, InventoryItem } from '../types';
 import { PlusIcon, TrashIcon, MinusIcon, ClockIcon } from './icons';
 import Avatar from './Avatar';
@@ -15,6 +15,7 @@ interface OrderRequestSectionProps {
 const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users, inventory, onAddItem, onRemoveItem, onMoveToBackorder }) => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([{ name: '', quantity: 1 }]);
   const [customerName, setCustomerName] = useState('');
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 
   const getUser = (userId: string) => users.find(u => u.id === userId);
   
@@ -26,6 +27,13 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
       newItems[index].quantity = parseInt(value, 10);
     }
     setOrderItems(newItems);
+  };
+
+  const handleSelectItem = (itemIndex: number, itemName: string) => {
+    const newItems = [...orderItems];
+    newItems[itemIndex].name = itemName;
+    setOrderItems(newItems);
+    setActiveItemIndex(null); // Close dropdown
   };
 
   const handleAddItemField = () => {
@@ -95,6 +103,8 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
     return null;
   };
 
+  const sortedInventory = useMemo(() => [...inventory].sort((a, b) => a.name.localeCompare(b.name)), [inventory]);
+
   return (
     <div>
       <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Pending Order Requests</h2>
@@ -110,16 +120,54 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requested Items</label>
               <div className="space-y-2 mt-1">
-                {orderItems.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                      placeholder={`Item #${index + 1}`}
-                      required
-                      className="flex-grow block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
-                    />
+                {orderItems.map((item, index) => {
+                  const filteredInventory = item.name
+                    ? sortedInventory.filter(invItem => 
+                        invItem.name.toLowerCase().includes(item.name.toLowerCase())
+                      )
+                    : sortedInventory;
+
+                  return (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div className="relative flex-grow">
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) => {
+                            handleItemChange(index, 'name', e.target.value);
+                            if (activeItemIndex !== index) {
+                              setActiveItemIndex(index);
+                            }
+                          }}
+                          onFocus={() => setActiveItemIndex(index)}
+                          onBlur={() => setTimeout(() => setActiveItemIndex(null), 200)}
+                          required
+                          placeholder="Search or type item name..."
+                          autoComplete="off"
+                          className="block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
+                        />
+                        {activeItemIndex === index && (
+                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            <ul className="py-1" role="listbox">
+                              {filteredInventory.length > 0 ? (
+                                filteredInventory.map((invItem) => (
+                                  <li
+                                    key={invItem.id}
+                                    onMouseDown={() => handleSelectItem(index, invItem.name)}
+                                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-amber-100 dark:hover:bg-amber-800/50 cursor-pointer"
+                                    role="option"
+                                    aria-selected={item.name === invItem.name}
+                                  >
+                                    {invItem.name}
+                                  </li>
+                                ))
+                              ) : (
+                                <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 italic">No items found. You can still add it.</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                      <input
                       type="number"
                       value={item.quantity || ''}
@@ -139,7 +187,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                       <MinusIcon className="h-5 w-5" />
                     </button>
                   </div>
-                ))}
+                )})}
               </div>
               <button
                 type="button"
